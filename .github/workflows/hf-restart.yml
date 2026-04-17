@@ -1,0 +1,40 @@
+name: Hugging Face Space Factory Rebuild
+
+on:
+  schedule:
+  # Esegue la ricompilazione ogni giorno alle 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Permette l'avvio manuale
+
+jobs:
+  rebuild-space:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Installa HuggingFace Hub
+        run: |
+          pip install huggingface_hub
+
+      - name: Ricompila (Factory Reboot) lo Spazio
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        shell: python 
+        run: |
+          from huggingface_hub import HfApi
+          import os
+          import sys
+          
+          # Parametri dello spazio
+          repo_id = 'Marco224/mediaflow-proxy'
+          token = os.environ.get('HF_TOKEN')
+          
+          if not token:
+              print('ERRORE: Token HF_TOKEN non trovato nei Secret di GitHub!')
+              sys.exit(1)
+              
+          api = HfApi(token=token)
+          try:
+              api.restart_space(repo_id=repo_id, factory_reboot=True)
+              print(f'Successo: Segnale di Factory Reboot inviato a {repo_id}')
+          except Exception as e:
+              print(f'Errore durante la ricompilazione: {e}')
+              sys.exit(1)
